@@ -1,7 +1,7 @@
 
 ## README
 
-````md
+
 # Dual-Agent Support Chatbot (Java)
 
 This project is a simple conversational support system with **two AI agents**
