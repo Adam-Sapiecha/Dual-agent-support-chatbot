@@ -1,4 +1,5 @@
 package com.example.app.routing;
+import com.example.app.llm.ToolSpec;
 
 import com.example.app.convo.Message;
 import com.example.app.llm.LlmClient;
@@ -31,7 +32,7 @@ Rules:
     for (int i = start; i < history.size(); i++) msgs.add(history.get(i));
     msgs.add(Message.user(userText));
 
-    var res = llm.chat(model, msgs, List.of());
+    var res = llm.chat(model, msgs, List.<ToolSpec>of());
     try {
       return om.readValue(res.text, RouteDecision.class);
     } catch (Exception e) {

@@ -2,6 +2,7 @@ package com.example.app.billing;
 
 import com.example.app.convo.Message;
 import com.example.app.llm.LlmClient;
+import com.example.app.llm.ToolSpec;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
@@ -22,113 +23,128 @@ public class BillingAgent {
     this.policy = policy;
   }
 
-  // Pseudo-tool calling: model outputs JSON {"action": "...", "args": {...}}
-  private static boolean looksLikeJson(String s) {
-    if (s == null) return false;
-    String t = s.trim();
-    return t.startsWith("{") && t.endsWith("}");
-  }
-
-  @SuppressWarnings("unchecked")
-  private Map<String,Object> parseJsonObj(String s) {
-    try {
-      return om.readValue(s, Map.class);
-    } catch (Exception e) {
-      return Map.of("action", "ask_user", "args", Map.of("question", "Please rephrase your billing request."));
-    }
-  }
-
-  public String answer(List<Message> historyNoTools, String userText) {
+  public String answer(List<Message> history, String userText) {
     List<Message> msgs = new ArrayList<>();
+
     msgs.add(Message.system("""
 You are Agent B — Billing Specialist.
-
-You can perform actions by replying with STRICT JSON ONLY:
-{
-  "action": "lookup_plan_price" | "open_refund_case" | "send_refund_form" | "refund_timeline" | "ask_user" | "none",
-  "args": { ... }
-}
-
+You can use tools to: look up plan pricing, open a refund case, send a refund form, and describe refund timelines.
+Follow policy:
+- Refund window: %d days from purchase date.
 Rules:
-- If you need missing info (email, plan name, purchase date), use action "ask_user" with args: {"question":"..."}
-- If you can answer directly without actions, use action "none" and include your answer in args: {"answer":"..."}
-- Otherwise choose one action and provide required args:
-  - lookup_plan_price: {"plan":"Pro"}
-  - open_refund_case: {"email":"...", "reason":"..."}
-  - send_refund_form: {"email":"...", "caseId":"..."}
-  - refund_timeline: {"purchaseDate":"YYYY-MM-DD or empty"}
+- Use tools when you need structured data (pricing, case creation).
+- If required fields are missing (email, invoice/case id, purchase date), ask the user.
+- Do NOT invent invoice numbers, case ids, or prices.
+- After opening a refund case: confirm caseId and offer the form.
+""".formatted(policy.refundWindowDays)));
 
-Refund policy:
-- Refund window is 14 days from purchase date.
-- If approved, refunds are processed within 5–10 business days.
-"""));
-
-    int start = Math.max(0, historyNoTools.size() - 8);
-    for (int i = start; i < historyNoTools.size(); i++) msgs.add(historyNoTools.get(i));
+    int start = Math.max(0, history.size() - 8);
+    for (int i = start; i < history.size(); i++) msgs.add(history.get(i));
     msgs.add(Message.user(userText));
 
-    // Up to 4 action steps
-    for (int step = 0; step < 4; step++) {
-      var res = llm.chat(model, msgs, List.of());
-      String txt = res.text == null ? "" : res.text.trim();
+    List<ToolSpec> toolSpecs = buildToolSpecs();
 
-      if (!looksLikeJson(txt)) {
-        // If model accidentally wrote plain text, accept it
-        return txt;
+
+    int maxSteps = 6;
+
+    for (int step = 0; step < maxSteps; step++) {
+      var res = llm.chat(model, msgs, toolSpecs);
+
+
+      if (res.toolCall != null && res.toolCall.name != null) {
+        String toolName = res.toolCall.name;
+        String toolCallId = res.toolCall.id;
+
+        Map<String, Object> args = res.toolCall.arguments == null ? Map.of() : res.toolCall.arguments;
+        Map<String, Object> toolResult = tools.execute(toolName, args);
+
+
+        if ("open_refund_case".equals(toolName)) {
+          Object caseId = toolResult.get("caseId");
+          if (caseId != null) state.lastCaseId = String.valueOf(caseId);
+          Object email = toolResult.get("email");
+          if (email != null) state.customerEmail = String.valueOf(email);
+        }
+
+
+        String toolJson;
+        try { toolJson = om.writeValueAsString(toolResult); }
+        catch (Exception e) { toolJson = "{\"error\":\"serialize_failed\"}"; }
+
+        msgs.add(Message.tool(toolName, toolCallId, toolJson));
+        continue;
       }
 
-      Map<String,Object> obj = parseJsonObj(txt);
-      String action = String.valueOf(obj.getOrDefault("action", "ask_user"));
-      Object argsObj = obj.getOrDefault("args", Map.of());
-      Map<String,Object> args = (argsObj instanceof Map) ? (Map<String,Object>) argsObj : Map.of();
 
-      switch (action) {
-        case "none" -> {
-          return String.valueOf(args.getOrDefault("answer", "Okay."));
-        }
-        case "ask_user" -> {
-          return String.valueOf(args.getOrDefault("question", "What billing help do you need?"));
-        }
-        case "lookup_plan_price" -> {
-          Map<String,Object> toolResult = tools.lookupPlanPrice(String.valueOf(args.getOrDefault("plan","")));
-          msgs.add(Message.assistant("ACTION_RESULT lookup_plan_price: " + toJson(toolResult)));
-          msgs.add(Message.user("Now reply to the user using the ACTION_RESULT."));
-        }
-        case "open_refund_case" -> {
-          String email = String.valueOf(args.getOrDefault("email",""));
-          String reason = String.valueOf(args.getOrDefault("reason",""));
-          Map<String,Object> toolResult = tools.openRefundCase(email, reason);
-          state.customerEmail = email;
-          state.lastCaseId = String.valueOf(toolResult.getOrDefault("caseId",""));
-          msgs.add(Message.assistant("ACTION_RESULT open_refund_case: " + toJson(toolResult)));
-          msgs.add(Message.user("Now reply to the user using the ACTION_RESULT. If needed, ask next question."));
-        }
-        case "send_refund_form" -> {
-          String email = String.valueOf(args.getOrDefault("email",""));
-          String caseId = String.valueOf(args.getOrDefault("caseId",""));
-          Map<String,Object> toolResult = tools.sendRefundForm(email, caseId);
-          msgs.add(Message.assistant("ACTION_RESULT send_refund_form: " + toJson(toolResult)));
-          msgs.add(Message.user("Now reply to the user using the ACTION_RESULT."));
-        }
-        case "refund_timeline" -> {
-          String pd = String.valueOf(args.getOrDefault("purchaseDate",""));
-          LocalDate d = null;
-          try { if (pd != null && !pd.isBlank()) d = LocalDate.parse(pd.trim()); } catch (Exception ignored) {}
-          Map<String,Object> toolResult = tools.refundTimeline(d);
-          msgs.add(Message.assistant("ACTION_RESULT refund_timeline: " + toJson(toolResult)));
-          msgs.add(Message.user("Now reply to the user using the ACTION_RESULT."));
-        }
-        default -> {
-          return "Billing: I can help with plans, pricing, invoices, subscriptions, and refunds. What do you need?";
-        }
+      if (res.text != null && !res.text.isBlank()) {
+        return res.text;
       }
+
+      return "Please rephrase your billing request with details (email, invoice id, plan name).";
     }
 
-    return "Billing: action loop exceeded.";
+    return "I couldn't complete the billing flow (too many tool steps). Please provide missing details (email, invoice id, purchase date).";
   }
 
-  private String toJson(Map<String,Object> m) {
-    try { return om.writeValueAsString(m); }
-    catch (Exception e) { return "{\"error\":\"json\"}"; }
+  private List<ToolSpec> buildToolSpecs() {
+    List<ToolSpec> specs = new ArrayList<>();
+
+    specs.add(ToolSpec.of(
+        "lookup_plan_price",
+        "Lookup plan name and monthly price for a given plan identifier.",
+        Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "plan", Map.of("type", "string", "description", "Plan name or identifier, e.g. Basic/Pro/Enterprise")
+            ),
+            "required", List.of("plan"),
+            "additionalProperties", false
+        )
+    ));
+
+    specs.add(ToolSpec.of(
+        "open_refund_case",
+        "Open a refund support case. Requires customer email and reason.",
+        Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "email", Map.of("type", "string", "description", "Customer email"),
+                "reason", Map.of("type", "string", "description", "Reason for refund request"),
+                "purchaseDate", Map.of("type", "string", "description", "Optional purchase date YYYY-MM-DD"),
+                "invoiceId", Map.of("type", "string", "description", "Optional invoice id")
+            ),
+            "required", List.of("email", "reason"),
+            "additionalProperties", false
+        )
+    ));
+
+    specs.add(ToolSpec.of(
+        "send_refund_form",
+        "Send a refund request form to a customer for a specific case.",
+        Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "email", Map.of("type", "string"),
+                "caseId", Map.of("type", "string")
+            ),
+            "required", List.of("email", "caseId"),
+            "additionalProperties", false
+        )
+    ));
+
+    specs.add(ToolSpec.of(
+        "refund_timeline",
+        "Return the typical refund processing timeline.",
+        Map.of(
+            "type", "object",
+            "properties", Map.of(
+                "purchaseDate", Map.of("type", "string", "description", "Optional purchase date YYYY-MM-DD")
+            ),
+            "required", List.of(),
+            "additionalProperties", false
+        )
+    ));
+
+    return specs;
   }
 }

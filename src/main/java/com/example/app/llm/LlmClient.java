@@ -1,7 +1,9 @@
 package com.example.app.llm;
 
 import com.example.app.convo.Message;
-import java.util.*;
+
+import java.util.List;
+import java.util.Map;
 
 public interface LlmClient {
   LlmResult chat(String model, List<Message> messages, List<ToolSpec> tools);
@@ -12,6 +14,7 @@ public interface LlmClient {
   }
 
   class ToolCall {
+    public String id;
     public String name;
     public Map<String, Object> arguments;
   }
