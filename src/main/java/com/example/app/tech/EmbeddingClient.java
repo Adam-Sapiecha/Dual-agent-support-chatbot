@@ -18,7 +18,7 @@ public class EmbeddingClient {
 
   public EmbeddingClient(String apiKey) {
     this.apiKey = apiKey;
-    this.http = HttpClient.newHttpClient();
+    this.http = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(10)).build();
   }
 
   public List<Double> getEmbedding(String text) throws IOException, InterruptedException {
@@ -31,6 +31,7 @@ public class EmbeddingClient {
 
     HttpRequest req = HttpRequest.newBuilder()
         .uri(URI.create("https://api.openai.com/v1/embeddings"))
+        .timeout(java.time.Duration.ofSeconds(30))
         .header("Authorization", "Bearer " + apiKey)
         .header("Content-Type", "application/json")
         .POST(HttpRequest.BodyPublishers.ofString(json))
@@ -40,7 +41,7 @@ public class EmbeddingClient {
 
     
     if (res.statusCode() < 200 || res.statusCode() >= 300) {
-      throw new RuntimeException("Embeddings HTTP " + res.statusCode() + ": " + res.body());
+      throw new RuntimeException("Embeddings HTTP " + res.statusCode());
     }
 
     JsonNode root = om.readTree(res.body());

@@ -17,18 +17,15 @@ public class OpenAiClient implements LlmClient {
   private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
   private static final String URL = "https://api.openai.com/v1/chat/completions";
 
-  private final OkHttpClient http = new OkHttpClient();
+  private final OkHttpClient http = new OkHttpClient.Builder()
+      .connectTimeout(java.time.Duration.ofSeconds(10))
+      .callTimeout(java.time.Duration.ofSeconds(45)).build();
   private final ObjectMapper om = new ObjectMapper();
   private final String apiKey;
 
   public OpenAiClient(String apiKey) {
     if (apiKey == null || apiKey.isBlank()) {
-      System.out.println("OPENAI_API_KEY missing.");
-      System.out.print("Please enter your OpenAI API key: ");
-      Scanner scanner = new Scanner(System.in);
-      apiKey = scanner.nextLine().trim();
-      if (apiKey.isBlank()) throw new IllegalArgumentException("API key cannot be empty.");
-      System.out.println("API key accepted.\n");
+      throw new IllegalArgumentException("OPENAI_API_KEY is required for live CLI mode.");
     }
     this.apiKey = apiKey;
   }
@@ -51,6 +48,14 @@ public class OpenAiClient implements LlmClient {
         }
 
         mn.put("content", m.content == null ? "" : m.content);
+        if (m.toolCall != null) {
+          ObjectNode tc = mn.putArray("tool_calls").addObject();
+          tc.put("id", m.toolCall.id);
+          tc.put("type", "function");
+          ObjectNode fn = tc.putObject("function");
+          fn.put("name", m.toolCall.name);
+          fn.put("arguments", om.writeValueAsString(m.toolCall.arguments));
+        }
       }
 
       if (tools != null && !tools.isEmpty()) {
@@ -65,6 +70,7 @@ public class OpenAiClient implements LlmClient {
           fn.set("parameters", om.valueToTree(t.parameters));
         }
         root.put("tool_choice", "auto");
+        root.put("parallel_tool_calls", false);
       }
 
       Request req = new Request.Builder()
@@ -78,7 +84,7 @@ public class OpenAiClient implements LlmClient {
         String body = resp.body() == null ? "" : resp.body().string();
 
         if (!resp.isSuccessful()) {
-          throw new RuntimeException("OpenAI HTTP " + resp.code() + ": " + body);
+          throw new RuntimeException("OpenAI request failed (HTTP " + resp.code() + ").");
         }
 
         JsonNode j = om.readTree(body);

@@ -6,9 +6,12 @@ import java.util.stream.Collectors;
 public class ConversationStore {
   private final List<Message> messages = new ArrayList<>();
 
-  public void add(Message m) { messages.add(m); }
+  public void add(Message m) {
+    messages.add(m);
+    if (messages.size() > 40) messages.remove(0);
+  }
 
-  public List<Message> allRaw() { return messages; }
+  public List<Message> allRaw() { return List.copyOf(messages); }
 
   public List<Message> allForLlm() {
     return messages.stream()

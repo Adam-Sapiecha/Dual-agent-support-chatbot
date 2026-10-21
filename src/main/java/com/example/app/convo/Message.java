@@ -7,6 +7,13 @@ public class Message {
 
   // REQUIRED for tool outputs
   public String toolCallId;
+  public com.example.app.llm.LlmClient.ToolCall toolCall;
+
+  public static Message assistantTool(com.example.app.llm.LlmClient.ToolCall call) {
+    Message m = assistant("");
+    m.toolCall = call;
+    return m;
+  }
 
   public static Message user(String c) {
     Message m = new Message();

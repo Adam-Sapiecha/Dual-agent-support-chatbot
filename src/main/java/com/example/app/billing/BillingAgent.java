@@ -35,6 +35,7 @@ Rules:
 - Use tools when you need structured data (pricing, case creation).
 - If required fields are missing (email, invoice/case id, purchase date), ask the user.
 - Do NOT invent invoice numbers, case ids, or prices.
+- Respect tool status: SIMULATED and SIMULATED_NOT_SENT mean a demo action, never a real submission or email.
 - After opening a refund case: confirm caseId and offer the form.
 """.formatted(policy.refundWindowDays)));
 
@@ -71,6 +72,7 @@ Rules:
         try { toolJson = om.writeValueAsString(toolResult); }
         catch (Exception e) { toolJson = "{\"error\":\"serialize_failed\"}"; }
 
+        msgs.add(Message.assistantTool(res.toolCall));
         msgs.add(Message.tool(toolName, toolCallId, toolJson));
         continue;
       }

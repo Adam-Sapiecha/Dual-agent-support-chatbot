@@ -29,7 +29,7 @@ public class TechAgent {
     String excerpts = top.isEmpty()
       ? "(no relevant documentation excerpts found)"
       : top.stream()
-          .map(c -> "Źródło: " + c.getSource() + "\n" + c.getText())
+          .map(c -> "Source: [" + c.getId() + "]\n" + c.getText())
           .collect(Collectors.joining("\n\n---\n\n"));
 
     List<Message> msgs = new ArrayList<>();

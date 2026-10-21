@@ -1,0 +1,14 @@
+{
+  "id": "dual-agent-support",
+  "title": "Dual-Agent Support System",
+  "description": {
+    "pl": "Java REST API z routerem intencji, cytowaną dokumentacją i wieloturowym symulowanym zwrotem. Publiczne demo regułowe bez kosztów API.",
+    "en": "Java REST API with intent routing, cited documentation and a multi-turn simulated refund. Public rule-based demo without paid API calls."
+  },
+  "stack": ["Java 17", "Spring Boot 4", "OpenAI API (CLI)", "Maven", "Docker", "JavaScript"],
+  "repositoryUrl": "https://github.com/Adam-Sapiecha/Dual-agent-support-chatbot",
+  "demoUrl": "https://luxonis.tail6ad453.ts.net:8443/support/",
+  "screenshotPath": "docs/screenshots/desktop.jpg",
+  "dataMode": "sample",
+  "notes": "Public web mode uses keyword routing and verbatim documentation excerpts; it does not call an LLM. Billing is simulated."
+}

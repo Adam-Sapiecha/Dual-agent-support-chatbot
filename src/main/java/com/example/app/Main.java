@@ -27,9 +27,7 @@ public class Main {
 
     boolean hasEmail = t.matches(".*\\b[\\w.%-]+@[\\w.-]+\\.[a-z]{2,}\\b.*");
     boolean hasBillingKeywords = t.matches(".*\\b(refund|invoice|case|id|receipt|charge|payment)\\b.*");
-    boolean isMostlyIdLike = t.matches(".*\\b\\d{1,8}\\b.*");
-
-    return hasEmail || hasBillingKeywords || isMostlyIdLike;
+    return hasEmail || hasBillingKeywords;
   }
 
   public static void main(String[] args) throws Exception {
@@ -69,17 +67,16 @@ public class Main {
       if (user.equalsIgnoreCase("exit") || user.equalsIgnoreCase("quit")) break;
       if (user.isBlank()) continue;
 
-      convo.add(Message.user(user));
-
       RouteDecision d;
       if ("BILLING".equalsIgnoreCase(lastRoute) && looksLikeBillingFollowup(user)) {
         d = new RouteDecision();
         d.route = "BILLING";
         d.reason = "Sticky billing follow-up (email/id)";
-      } else if ("TECH".equalsIgnoreCase(lastRoute) && !looksLikeBillingFollowup(user)) {
+      } else if ("TECH".equalsIgnoreCase(lastRoute) && !looksLikeBillingFollowup(user)
+          && !user.toLowerCase(java.util.Locale.ROOT).matches(".*\\b(plan|pricing|price|subscription|refund|billing)\\b.*")) {
         // lekka “lepkość” dla TECH na krótkie doprecyzowania typu “ok”, “it still fails”, “401”
         boolean looksLikeTechFollowup =
-            user.length() <= 40 ||
+            user.toLowerCase().matches("(ok|it still fails|still fails|how|why)[?.! ]*") ||
             user.toLowerCase().matches(".*\\b(401|403|404|500|timeout|error|fails|failing|stack|trace|api|token|key)\\b.*");
 
         if (looksLikeTechFollowup) {
@@ -104,6 +101,7 @@ public class Main {
 
       lastRoute = d.route;
 
+      convo.add(Message.user(user));
       convo.add(Message.assistant(out));
       System.out.println("Assistant: " + out);
     }

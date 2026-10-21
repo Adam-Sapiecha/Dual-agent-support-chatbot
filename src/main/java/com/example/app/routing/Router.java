@@ -34,7 +34,10 @@ Rules:
 
     var res = llm.chat(model, msgs, List.<ToolSpec>of());
     try {
-      return om.readValue(res.text, RouteDecision.class);
+      RouteDecision parsed = om.readValue(res.text, RouteDecision.class);
+      if (parsed == null || parsed.route == null || !Set.of("TECH", "BILLING", "OUT_OF_SCOPE").contains(parsed.route))
+        throw new IllegalArgumentException("Unsupported route");
+      return parsed;
     } catch (Exception e) {
       RouteDecision d = new RouteDecision();
       d.route = "OUT_OF_SCOPE";

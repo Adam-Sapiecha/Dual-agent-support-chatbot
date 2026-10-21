@@ -1,6 +1,7 @@
-target
 .git
-.idea
-.vscode
-*.iml
-.DS_Store
+target
+.env
+.env.*
+docsIndex.json
+*.tar.gz
+output
