@@ -70,7 +70,7 @@ public class DemoChatService {
     if (s.lastTech != null && lower.matches("(?iu)(it still fails|still fails|why|how|dalej nie działa|co dalej|and now)[?.! ]*"))
       return technical(id, s, s.lastTech);
     return reply(id, s, "OUT_OF_SCOPE", "No supported intent matched",
-        "I can help with API integration, authentication, webhooks, plan pricing and sample refunds. Try a scenario on the left. This rule-based demo supports a limited vocabulary; the CLI supports OpenAI routing.", List.of(), List.of());
+        "I can help with API integration, authentication, webhooks, plan pricing and sample refunds. Choose an example above the conversation. This rule-based demo supports a limited vocabulary; the CLI supports OpenAI routing.", List.of(), List.of());
   }
 
   private Reply technical(String id, Session s, String query) {

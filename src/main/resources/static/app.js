@@ -13,8 +13,7 @@ function append(role, text, route) {
 }
 function inspect(data) {
   $('route').textContent = data.route; $('reason').textContent = data.reason;
-  $('tech-node').classList.toggle('selected', data.route === 'TECH'); $('billing-node').classList.toggle('selected', data.route === 'BILLING');
-  $('router-node').classList.add('selected'); $('tools').replaceChildren(); $('sources').replaceChildren();
+   $('tools').replaceChildren(); $('sources').replaceChildren();
   if (!data.tools.length) $('tools').textContent = 'No tools needed';
   data.tools.forEach(tool => { const el = document.createElement('span'); el.className = 'tool'; el.textContent = tool; $('tools').append(el); });
   if (!data.sources.length) $('sources').textContent = 'No documentation used in this reply.';
@@ -46,6 +45,6 @@ $('reset').addEventListener('click', async () => {
     catch { $('status').textContent = 'Could not clear the server session. Please retry.'; return; }
   }
   sessionId = null; $('messages').replaceChildren(initial.cloneNode(true)); $('status').textContent = ''; $('message').value = '';
-  inspect({route:'Waiting for a message',reason:'The route and matching evidence appear here after each response.',tools:[],sources:[],turn:0}); $('router-node').classList.remove('selected'); $('message').focus();
+  inspect({route:'Waiting for a message',reason:'The route and matching evidence appear here after each response.',tools:[],sources:[],turn:0}); $('message').focus();
 });
-fetch(new URL('api/health', base), {signal:AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error(); return r.json(); }).then(() => $('health').textContent = '● Java service online · sample mode').catch(() => $('health').textContent = 'Service unavailable · try again later');
+fetch(new URL('api/health', base), {signal:AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error(); return r.json(); }).then(() => $('health').textContent = 'Service available · sample mode').catch(() => $('health').textContent = 'Service unavailable · try again later');
