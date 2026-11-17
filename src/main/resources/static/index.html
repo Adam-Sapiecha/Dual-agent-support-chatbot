@@ -2,23 +2,23 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="Support demo: API documentation, request routing and sample billing."><title>Support demo</title><link rel="icon" href="favicon.svg"><link rel="stylesheet" href="app.css"><script src="app.js" defer></script></head>
 <body><a class="skip-link" href="#chat-heading">Skip to conversation</a>
 <header class="topbar"><a class="source-link" href="https://github.com/Adam-Sapiecha/Dual-agent-support-chatbot" target="_blank" rel="noreferrer">Source code ↗</a></header>
-<main><section class="intro"><h1>Support demo</h1><p class="mode-note">Rule-based routing and documentation excerpts. No live AI calls.</p></section>
+<main><section class="intro"><h1>Support demo</h1><p class="mode-note">Rule-based demo. No live LLM calls.</p></section>
 <div class="workspace"><section class="chat-panel" aria-labelledby="chat-heading">
-<div class="panel-top"><h2 id="chat-heading" tabindex="-1">Support desk</h2><button id="reset" class="quiet">New conversation</button></div>
+<div class="panel-top"><h2 id="chat-heading" tabindex="-1">Conversation</h2><button id="reset" class="quiet">New conversation</button></div>
 <div class="scenarios" aria-label="Example questions"><span>Examples</span>
 <button class="scenario" data-prompt="I get HTTP 401 when calling the API. What should I check?">HTTP 401</button>
 <button class="scenario" data-prompt="What is the webhook timeout and retry behavior?">Webhooks</button>
 <button class="scenario" data-prompt="How much is the Pro plan?">Pricing</button>
 <button class="scenario" data-prompt="I want a refund">Sample refund</button>
 <button class="scenario" data-prompt="Tell me a pancake recipe">Out of scope</button></div>
-<div id="messages" class="messages" tabindex="0" role="log" aria-live="polite" aria-label="Conversation"><article class="message assistant"><span class="avatar" aria-hidden="true">R</span><div><p>Choose an example or enter a question in English.</p></div></article></div>
+<div id="messages" class="messages" tabindex="0" role="log" aria-live="polite" aria-label="Conversation"><article class="message assistant"><span class="avatar" aria-hidden="true">R</span><div><p>Choose an example or ask in English.</p></div></article></div>
 <div id="refund-help" class="refund-help" hidden>Next: <button data-followup="recruiter@example.com">Sample email</button><button data-followup="I was charged twice">Sample reason</button></div><p id="status" class="status" role="status"></p>
-<form id="chat-form"><label for="message" class="sr-only">Your support question</label><div class="composer"><textarea id="message" maxlength="2000" rows="2" placeholder="Ask a technical or billing question…" required></textarea><button id="send" type="submit" aria-label="Send message">Send</button></div><div class="composer-note"><span>Enter to send · Shift + Enter for a new line</span><span id="turns">0 / 30 turns</span></div></form>
-<p class="privacy">Use fictional details. Prices and cases are samples; no email or payment is sent. Sessions expire after 30 idle minutes.</p>
+<form id="chat-form"><label for="message" class="sr-only">Your support question</label><div class="composer"><textarea id="message" maxlength="2000" rows="2" placeholder="Technical or billing question…" required></textarea><button id="send" type="submit" aria-label="Send message">Send</button></div><div class="composer-note"><span>Enter to send · Shift + Enter for a new line</span><span id="turns">0 / 30 turns</span></div></form>
+<p class="privacy">Use fictional details. Prices and refunds are samples; no email or payment is sent. Expires after 30 idle minutes.</p>
 </section>
 <aside class="inspector" aria-labelledby="evidence-heading"><h2 id="evidence-heading">Response details</h2>
-<div class="trail-block"><h3>Route</h3><p id="route" class="route">Waiting for a message</p><p id="reason" class="muted">Details appear after a response.</p></div>
-<div class="trail-block"><h3>Tools executed</h3><div id="tools" class="muted">No tools yet</div></div>
-<div class="trail-block"><h3>Documentation sources</h3><div id="sources" class="muted">Sources appear with technical answers.</div></div>
-<a class="source-link" href="https://github.com/Adam-Sapiecha/Dual-agent-support-chatbot#readme" target="_blank" rel="noreferrer">Implementation and CLI integration ↗</a></aside></div>
+<div class="trail-block"><h3>Route</h3><p id="route" class="route">Waiting for a message</p><p id="reason" class="muted"></p></div>
+<div class="trail-block"><h3>Tools executed</h3><div id="tools" class="muted">—</div></div>
+<div class="trail-block"><h3>Documentation sources</h3><div id="sources" class="muted">—</div></div>
+<a class="source-link" href="https://github.com/Adam-Sapiecha/Dual-agent-support-chatbot#readme" target="_blank" rel="noreferrer">Documentation ↗</a></aside></div>
 <footer><span id="health" role="status">Checking service…</span></footer></main></body></html>

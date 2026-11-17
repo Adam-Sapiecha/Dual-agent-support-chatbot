@@ -14,9 +14,9 @@ function append(role, text, route) {
 function inspect(data) {
   $('route').textContent = data.route; $('reason').textContent = data.reason;
    $('tools').replaceChildren(); $('sources').replaceChildren();
-  if (!data.tools.length) $('tools').textContent = 'No tools needed';
+  if (!data.tools.length) $('tools').textContent = 'None';
   data.tools.forEach(tool => { const el = document.createElement('span'); el.className = 'tool'; el.textContent = tool; $('tools').append(el); });
-  if (!data.sources.length) $('sources').textContent = 'No documentation used in this reply.';
+  if (!data.sources.length) $('sources').textContent = 'None';
   data.sources.forEach(source => { const details = document.createElement('details'), title = document.createElement('summary'), body = document.createElement('p'); details.className = 'source'; title.textContent = source.id; body.textContent = source.text; details.append(title, body); $('sources').append(details); });
   $('turns').textContent = data.turn + ' / 30 turns'; $('refund-help').hidden = data.route !== 'BILLING' || !data.reason.includes('waiting');
 }
@@ -45,6 +45,6 @@ $('reset').addEventListener('click', async () => {
     catch { $('status').textContent = 'Could not clear the server session. Please retry.'; return; }
   }
   sessionId = null; $('messages').replaceChildren(initial.cloneNode(true)); $('status').textContent = ''; $('message').value = '';
-  inspect({route:'Waiting for a message',reason:'The route and matching evidence appear here after each response.',tools:[],sources:[],turn:0}); $('message').focus();
+  inspect({route:'Waiting for a message',reason:'',tools:[],sources:[],turn:0}); $('message').focus();
 });
 fetch(new URL('api/health', base), {signal:AbortSignal.timeout(10000)}).then(r => { if(!r.ok) throw new Error(); return r.json(); }).then(() => $('health').textContent = 'Service available · sample mode').catch(() => $('health').textContent = 'Service unavailable · try again later');
